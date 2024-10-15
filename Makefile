@@ -13,6 +13,6 @@ linting:
 mypy:
 	poetry run mypy src
 
-# .PHONY: run_server
-# run_server:
-# 	poetry run uvicorn --app-dir src ml_api.main:app
+.PHONY: run_loader
+run_loader:
+	poetry run python src/memcache_loader/memc_load.py --pattern=data/*.tsv.gz --dry

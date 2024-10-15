@@ -8,6 +8,9 @@ packages = [{include = "memcache_loader", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.12"
+python-memcached = "^1.62"
+protobuf = "^5.28.2"
+pymemcache = "^4.0.0"
 
 
 [tool.poetry.group.dev.dependencies]
