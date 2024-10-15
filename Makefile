@@ -16,3 +16,7 @@ mypy:
 .PHONY: run_loader
 run_loader:
 	poetry run python src/memcache_loader/memc_load.py --pattern=data/*.tsv.gz --dry
+
+.PHONY: run_loader_mp
+run_loader_mp:
+	poetry run python src/memcache_loader/memc_load_mp.py --pattern=data/*.tsv.gz --dry
