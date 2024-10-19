@@ -16,13 +16,17 @@ from typing import Any, Union
 import appsinstalled_pb2
 
 # pip install python-memcached
-# import memcache
+import memcache
 
 from multiprocessing import Queue, Process, Array, current_process
 from itertools import islice
 
+from typing import Dict
+
 NORMAL_ERR_RATE = 0.01
 BATCH_SIZE = 10000
+BUFF_MAX_SIZE = 65000
+GLOBAL_BUFF: Dict[str, Any] = dict()
 PARSERS_NUM = 4
 AppsInstalled = collections.namedtuple(
     "AppsInstalled", ["dev_type", "dev_id", "lat", "lon", "apps"]
@@ -52,7 +56,11 @@ def insert_appsinstalled(
                 "%s - %s -> %s" % (memc_addr, key, str(ua).replace("\n", " "))
             )
         else:
-            memc_clients[memc_addr].set(key, packed)
+            if len(GLOBAL_BUFF) < BUFF_MAX_SIZE:
+                GLOBAL_BUFF[key] = packed
+            else:
+                memc_clients[memc_addr].set_multi(GLOBAL_BUFF)
+                GLOBAL_BUFF.clear()
     except Exception as e:
         logging.exception("Cannot write to memc %s: %s" % (memc_addr, e))
         return False
@@ -191,7 +199,6 @@ def main(options: Any) -> None:
     }
 
     # Memcached clients
-    import memcache
     memc_clients = dict(
         (key, memcache.Client([address])) for key, address in device_memc.items()
     )
@@ -238,7 +245,7 @@ def prototest() -> None:
     logging.info("Starting test")
     sample = "idfa\t1rfw452y52g2gq4g\t55.55\t42.42\t1423,43,567,3,7,23\ngaid\t7rfw452y52g2gq4g\t55.55\t42.42\t7423,424"
     for line in sample.splitlines():
-        dev_type, dev_id, lat, lon, raw_apps = line.strip().split("\t")
+        _, _, lat, lon, raw_apps = line.strip().split("\t")
         apps = [int(a) for a in raw_apps.split(",") if a.isdigit()]
         lat, lon = float(lat), float(lon)  # type: ignore
         ua = appsinstalled_pb2.UserApps()
